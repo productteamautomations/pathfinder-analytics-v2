@@ -9,6 +9,7 @@ import BusinessDetail from "./pages/BusinessDetail";
 import SalesLeaderboard from "./pages/SalesLeaderboard";
 import Overview from "./pages/Overview";
 import NotFound from "./pages/NotFound";
+import { SessionDataProvider } from "./contexts/SessionDataContext";
 
 const queryClient = new QueryClient();
 
@@ -19,14 +20,16 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <TopNav />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/business/:id" element={<BusinessDetail />} />
-            <Route path="/leaderboard" element={<SalesLeaderboard />} />
-            <Route path="/overview" element={<Overview />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <SessionDataProvider>
+            <TopNav />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/business/:id" element={<BusinessDetail />} />
+              <Route path="/leaderboard" element={<SalesLeaderboard />} />
+              <Route path="/overview" element={<Overview />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </SessionDataProvider>
         </BrowserRouter>
       </div>
     </TooltipProvider>

@@ -3,12 +3,33 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
 import SearchBar from "@/components/SearchBar";
 import ResultsList from "@/components/ResultsList";
-import { BusinessRecord } from "@/types/business";
+import { BusinessRecord, KissRawRecord, normalizeKissRecord } from "@/types/business";
 import { Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const WEBHOOK_URL = "https://n8n.addpeople.net/webhook/7e3c68fb-a6bf-43a8-a339-92374h234h23g";
 const ALL_SESSIONS_URL = "https://n8n.addpeople.net/webhook/7e3c68fb-a6bf-43a8-a339-oiu3294u23j";
+
+function parseCombinedResponse(data: unknown): BusinessRecord[] {
+  if (!Array.isArray(data)) return [];
+
+  // New format: [{pathfinder: [...]}, {kiss: [...]}]
+  const pathfinderObj = (data as any[]).find((item) => item.pathfinder);
+  const kissObj = (data as any[]).find((item) => item.kiss);
+
+  if (pathfinderObj || kissObj) {
+    const pathfinderRecords: BusinessRecord[] = (pathfinderObj?.pathfinder || []).map(
+      (r: any) => ({ ...r, _sessionType: "pathfinder" as const })
+    );
+    const kissRecords: BusinessRecord[] = (kissObj?.kiss || []).map(
+      (r: KissRawRecord) => normalizeKissRecord(r)
+    );
+    return [...pathfinderRecords, ...kissRecords];
+  }
+
+  // Legacy flat array format
+  return (data as any[]).map((r: any) => ({ ...r, _sessionType: "pathfinder" as const }));
+}
 
 const Index = () => {
   const navigate = useNavigate();
@@ -41,9 +62,10 @@ const Index = () => {
       if (!response.ok) throw new Error("Failed to fetch sessions");
 
       const data = await response.json();
+      const allRecords = parseCombinedResponse(data);
 
-      if (Array.isArray(data)) {
-        const filtered = data.filter((session: BusinessRecord) => session.google_id === salespersonId);
+      if (allRecords.length > 0 || Array.isArray(data)) {
+        const filtered = allRecords.filter((session: BusinessRecord) => session.google_id === salespersonId);
         setResults(filtered);
         const salespersonName = filtered[0]?.google_full_name || "Unknown";
         toast({
@@ -87,18 +109,19 @@ const Index = () => {
       if (!response.ok) throw new Error("Failed to fetch results");
 
       const data = await response.json();
+      const allRecords = parseCombinedResponse(data);
 
-      if (Array.isArray(data)) {
-        setResults(data);
-        if (data.length === 0) {
+      if (allRecords.length > 0 || Array.isArray(data)) {
+        setResults(allRecords);
+        if (allRecords.length === 0) {
           toast({ title: "No results found", description: "Try searching with different terms." });
         } else {
           toast({
             title: "Search complete",
-            description: `Found ${data.length} result${data.length !== 1 ? "s" : ""}.`
+            description: `Found ${allRecords.length} result${allRecords.length !== 1 ? "s" : ""}.`
           });
         }
-      } else if (data.message) {
+      } else if ((data as any).message) {
         toast({
           title: "Search initiated",
           description: "The search is processing. Please wait a moment and try again."
@@ -134,12 +157,13 @@ const Index = () => {
       if (!response.ok) throw new Error("Failed to fetch all sessions");
 
       const data = await response.json();
+      const allRecords = parseCombinedResponse(data);
 
-      if (Array.isArray(data)) {
-        setResults(data);
+      if (allRecords.length > 0 || Array.isArray(data)) {
+        setResults(allRecords);
         toast({
           title: "All sessions loaded",
-          description: `Found ${data.length} session${data.length !== 1 ? "s" : ""}.`
+          description: `Found ${allRecords.length} session${allRecords.length !== 1 ? "s" : ""}.`
         });
       } else {
         throw new Error("Unexpected response format");

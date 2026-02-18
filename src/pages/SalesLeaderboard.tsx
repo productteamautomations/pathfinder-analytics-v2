@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { BusinessRecord } from "@/types/business";
+import { BusinessRecord, KissRawRecord, normalizeKissRecord } from "@/types/business";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,7 +47,15 @@ const SalesLeaderboard = () => {
       if (!response.ok) throw new Error("Failed to fetch sessions");
       const data = await response.json();
       if (Array.isArray(data)) {
-        setSessions(data);
+        const pathfinderObj = data.find((item: any) => item.pathfinder);
+        const kissObj = data.find((item: any) => item.kiss);
+        if (pathfinderObj || kissObj) {
+          const pathfinderRecords = (pathfinderObj?.pathfinder || []).map((r: any) => ({ ...r, _sessionType: "pathfinder" as const }));
+          const kissRecords = (kissObj?.kiss || []).map((r: KissRawRecord) => normalizeKissRecord(r));
+          setSessions([...pathfinderRecords, ...kissRecords]);
+        } else {
+          setSessions(data.map((r: any) => ({ ...r, _sessionType: "pathfinder" as const })));
+        }
         toast({ title: "Leaderboard loaded", description: `Loaded ${data.length} sessions.` });
       } else {
         throw new Error("Unexpected response format");

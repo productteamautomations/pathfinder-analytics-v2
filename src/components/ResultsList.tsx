@@ -17,7 +17,7 @@ interface ResultsListProps {
   onClearSalespersonFilter?: () => void;
 }
 
-type SortField = "google_full_name" | "client_name" | "product" | "timestamp" | "progress" | "status";
+type SortField = "google_full_name" | "client_name" | "product" | "timestamp" | "progress" | "status" | "sessionType";
 type SortDir = "asc" | "desc";
 
 const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilter }: ResultsListProps) => {
@@ -104,6 +104,9 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
           cmp = aComplete - bComplete;
           break;
         }
+        case "sessionType":
+          cmp = (a._sessionType || "").localeCompare(b._sessionType || "");
+          break;
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -270,6 +273,9 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
           <Table>
             <TableHeader>
               <TableRow className="border-b border-border bg-muted/30">
+                <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("sessionType")}>
+                  <span className="flex items-center gap-1.5">Type <SortIcon field="sessionType" /></span>
+                </TableHead>
                 <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("google_full_name")}>
                   <span className="flex items-center gap-1.5">Salesperson <SortIcon field="google_full_name" /></span>
                 </TableHead>
@@ -295,7 +301,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
             <TableBody>
               {filteredAndSortedResults.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center py-8">
+                  <TableCell colSpan={9} className="text-center py-8">
                     <p className="text-muted-foreground text-sm">No results match your filters.</p>
                     <Button variant="link" size="sm" onClick={clearFilters} className="mt-1 text-xs">
                       Clear filters
@@ -306,13 +312,23 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                 filteredAndSortedResults.map((record) => {
                   const progressPercent = record.total_steps > 0 ? Math.round((record.step / record.total_steps) * 100) : 0;
                   const isComplete = record.step >= record.total_steps;
+                  const isPathfinder = record._sessionType === "pathfinder";
 
                   return (
                     <TableRow
-                      key={record.id}
-                      className="border-b border-border/60 hover:bg-muted/30 transition-colors cursor-pointer"
-                      onClick={() => navigate(`/business/${record.id}`, { state: { record } })}
+                      key={`${record._sessionType}-${record.id}`}
+                      className={`border-b border-border/60 hover:bg-muted/30 transition-colors ${isPathfinder ? "cursor-pointer" : ""}`}
+                      onClick={() => isPathfinder && navigate(`/business/${record.id}`, { state: { record } })}
                     >
+                      <TableCell>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                          isPathfinder
+                            ? "bg-blue-50 text-blue-700"
+                            : "bg-purple-50 text-purple-700"
+                        }`}>
+                          {isPathfinder ? "Pathfinder" : "KISS"}
+                        </span>
+                      </TableCell>
                       <TableCell className="font-medium text-foreground text-sm">
                         {record.google_full_name || "Unknown"}
                       </TableCell>
@@ -327,7 +343,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                         )}
                       </TableCell>
                       <TableCell>
-                        {record.website_url ? (
+                        {record.website_url && record.website_url !== "N/A" ? (
                           <a
                             href={record.website_url.startsWith("http") ? record.website_url : `https://${record.website_url}`}
                             target="_blank"
@@ -370,7 +386,9 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                         </div>
                       </TableCell>
                       <TableCell>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        {isPathfinder ? (
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   );

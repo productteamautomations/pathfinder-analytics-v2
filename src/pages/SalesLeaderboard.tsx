@@ -10,6 +10,7 @@ import { Loader2, Trophy, Calendar, Filter, Eye, RefreshCw } from "lucide-react"
 import { format } from "date-fns";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { useSessionData } from "@/contexts/SessionDataContext";
 
 const ALL_SESSIONS_URL = "https://n8n.addpeople.net/webhook/7e3c68fb-a6bf-43a8-a339-oiu3294u23j";
 
@@ -24,8 +25,8 @@ interface SalespersonStats {
 
 const SalesLeaderboard = () => {
   const navigate = useNavigate();
-  const [sessions, setSessions] = useState<BusinessRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { leaderboardSessions: sessions, setLeaderboardSessions: setSessions, leaderboardLoaded, setLeaderboardLoaded } = useSessionData();
+  const [isLoading, setIsLoading] = useState(!leaderboardLoaded);
   const [selectedSalesperson, setSelectedSalesperson] = useState<string>("all");
   const [dateRange, setDateRange] = useState<{from: Date | undefined;to: Date | undefined;}>({
     from: undefined,
@@ -33,7 +34,9 @@ const SalesLeaderboard = () => {
   });
 
   useEffect(() => {
-    fetchAllSessions();
+    if (!leaderboardLoaded) {
+      fetchAllSessions();
+    }
   }, []);
 
   const fetchAllSessions = async () => {
@@ -56,6 +59,7 @@ const SalesLeaderboard = () => {
         } else {
           setSessions(data.map((r: any) => ({ ...r, _sessionType: "pathfinder" as const })));
         }
+        setLeaderboardLoaded(true);
         toast({ title: "Leaderboard loaded", description: `Loaded ${data.length} sessions.` });
       } else {
         throw new Error("Unexpected response format");

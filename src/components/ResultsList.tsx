@@ -1,6 +1,17 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ExternalLink, Filter, Calendar, X, CheckCircle2, Clock, ArrowUpDown, ArrowUp, ArrowDown, ChevronRight } from "lucide-react";
+import {
+  ExternalLink,
+  Filter,
+  Calendar,
+  X,
+  CheckCircle2,
+  Clock,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronRight,
+} from "lucide-react";
 import { BusinessRecord } from "@/types/business";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -10,7 +21,15 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
 
 interface ResultsListProps {
   results: BusinessRecord[];
@@ -36,17 +55,27 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [currentPage, setCurrentPage] = useState(1);
 
+  const standardizeProduct = (raw: string | undefined): string | null => {
+    if (!raw) return null;
+    const lower = raw.toLowerCase();
+    if (lower.includes("lead")) return "Lead Gen";
+    if (lower.includes("seo")) return "Local SEO";
+    if (lower.includes("lsa")) return "LSA";
+    return null;
+  };
+
   const filterOptions = useMemo(() => {
     const products = new Set<string>();
     const contractLengths = new Set<string>();
-    
+
     // Count sessions per salesperson name (like Overview page approach)
     const salesPersonCounts: Record<string, { pathfinder: number; kiss: number }> = {};
 
     results.forEach((record) => {
-      if (record.product) products.add(record.product);
+      const sp = standardizeProduct(record.product);
+      if (sp) products.add(sp);
       if (record.contract_length) contractLengths.add(record.contract_length);
-      
+
       const name = record.google_full_name;
       if (name) {
         if (!salesPersonCounts[name]) {
@@ -84,7 +113,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
           record.website_url?.toLowerCase().includes(q);
         if (!matchesSearch) return false;
       }
-      if (productFilter !== "all" && record.product !== productFilter) return false;
+      if (productFilter !== "all" && standardizeProduct(record.product) !== productFilter) return false;
       if (salesPersonFilter !== "all" && record.google_full_name !== salesPersonFilter) return false;
       if (contractLengthFilter !== "all" && record.contract_length !== contractLengthFilter) return false;
       if (dateFrom) {
@@ -133,7 +162,17 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
     });
 
     return filtered;
-  }, [results, searchQuery, productFilter, salesPersonFilter, contractLengthFilter, dateFrom, dateTo, sortField, sortDir]);
+  }, [
+    results,
+    searchQuery,
+    productFilter,
+    salesPersonFilter,
+    contractLengthFilter,
+    dateFrom,
+    dateTo,
+    sortField,
+    sortDir,
+  ]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(filteredAndSortedResults.length / ITEMS_PER_PAGE));
@@ -177,7 +216,12 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
   };
 
   const hasActiveFilters =
-    searchQuery || productFilter !== "all" || salesPersonFilter !== "all" || contractLengthFilter !== "all" || dateFrom || dateTo;
+    searchQuery ||
+    productFilter !== "all" ||
+    salesPersonFilter !== "all" ||
+    contractLengthFilter !== "all" ||
+    dateFrom ||
+    dateTo;
 
   if (results.length === 0) {
     return (
@@ -213,11 +257,19 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
               type="text"
               placeholder="Filter results…"
               value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               className="flex-1 h-9 bg-background"
             />
             {hasActiveFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs text-muted-foreground shrink-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="text-xs text-muted-foreground shrink-0"
+              >
                 <X className="h-3 w-3 mr-1" />
                 Clear
               </Button>
@@ -228,14 +280,22 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
           <div className="flex flex-wrap gap-2 items-center">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
 
-            <Select value={productFilter} onValueChange={(v) => { setProductFilter(v); setCurrentPage(1); }}>
+            <Select
+              value={productFilter}
+              onValueChange={(v) => {
+                setProductFilter(v);
+                setCurrentPage(1);
+              }}
+            >
               <SelectTrigger className="h-8 text-xs w-[140px]">
                 <SelectValue placeholder="Product" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Products</SelectItem>
                 {filterOptions.products.map((product) => (
-                  <SelectItem key={product} value={product}>{product}</SelectItem>
+                  <SelectItem key={product} value={product}>
+                    {product}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -247,19 +307,29 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
               <SelectContent>
                 <SelectItem value="all">All Sales</SelectItem>
                 {filterOptions.salesPersons.map((name) => (
-                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={contractLengthFilter} onValueChange={(v) => { setContractLengthFilter(v); setCurrentPage(1); }}>
+            <Select
+              value={contractLengthFilter}
+              onValueChange={(v) => {
+                setContractLengthFilter(v);
+                setCurrentPage(1);
+              }}
+            >
               <SelectTrigger className="h-8 text-xs w-[140px]">
                 <SelectValue placeholder="Contract" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Contracts</SelectItem>
                 {filterOptions.contractLengths.map((length) => (
-                  <SelectItem key={length} value={length}>{length}</SelectItem>
+                  <SelectItem key={length} value={length}>
+                    {length}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -273,7 +343,13 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
-                  <CalendarComponent mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="pointer-events-auto" />
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={setDateFrom}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
                 </PopoverContent>
               </Popover>
 
@@ -287,7 +363,13 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
-                  <CalendarComponent mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="pointer-events-auto" />
+                  <CalendarComponent
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={setDateTo}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
                 </PopoverContent>
               </Popover>
             </div>
@@ -297,7 +379,9 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
 
       {/* Results Count */}
       <p className="text-xs text-muted-foreground mb-2 px-1">
-        Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedResults.length)} of {filteredAndSortedResults.length} results
+        Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+        {Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedResults.length)} of {filteredAndSortedResults.length}{" "}
+        results
       </p>
 
       {/* Results Table */}
@@ -307,26 +391,46 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
             <TableHeader>
               <TableRow className="border-b border-border bg-muted/30">
                 <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("sessionType")}>
-                  <span className="flex items-center gap-1.5">Type <SortIcon field="sessionType" /></span>
+                  <span className="flex items-center gap-1.5">
+                    Type <SortIcon field="sessionType" />
+                  </span>
                 </TableHead>
-                <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("google_full_name")}>
-                  <span className="flex items-center gap-1.5">Salesperson <SortIcon field="google_full_name" /></span>
+                <TableHead
+                  className="font-medium cursor-pointer select-none"
+                  onClick={() => toggleSort("google_full_name")}
+                >
+                  <span className="flex items-center gap-1.5">
+                    Salesperson <SortIcon field="google_full_name" />
+                  </span>
                 </TableHead>
                 <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("client_name")}>
-                  <span className="flex items-center gap-1.5">Client <SortIcon field="client_name" /></span>
+                  <span className="flex items-center gap-1.5">
+                    Client <SortIcon field="client_name" />
+                  </span>
                 </TableHead>
                 <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("product")}>
-                  <span className="flex items-center gap-1.5">Product <SortIcon field="product" /></span>
+                  <span className="flex items-center gap-1.5">
+                    Product <SortIcon field="product" />
+                  </span>
                 </TableHead>
                 <TableHead className="font-medium">Website</TableHead>
                 <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("timestamp")}>
-                  <span className="flex items-center gap-1.5">Updated <SortIcon field="timestamp" /></span>
+                  <span className="flex items-center gap-1.5">
+                    Updated <SortIcon field="timestamp" />
+                  </span>
                 </TableHead>
                 <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("progress")}>
-                  <span className="flex items-center gap-1.5">Progress <SortIcon field="progress" /></span>
+                  <span className="flex items-center gap-1.5">
+                    Progress <SortIcon field="progress" />
+                  </span>
                 </TableHead>
-                <TableHead className="font-medium cursor-pointer select-none min-w-[120px]" onClick={() => toggleSort("status")}>
-                  <span className="flex items-center gap-1.5">Status <SortIcon field="status" /></span>
+                <TableHead
+                  className="font-medium cursor-pointer select-none min-w-[120px]"
+                  onClick={() => toggleSort("status")}
+                >
+                  <span className="flex items-center gap-1.5">
+                    Status <SortIcon field="status" />
+                  </span>
                 </TableHead>
                 <TableHead className="font-medium w-[80px]"></TableHead>
               </TableRow>
@@ -343,7 +447,8 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                 </TableRow>
               ) : (
                 paginatedResults.map((record) => {
-                  const progressPercent = record.total_steps > 0 ? Math.round((record.step / record.total_steps) * 100) : 0;
+                  const progressPercent =
+                    record.total_steps > 0 ? Math.round((record.step / record.total_steps) * 100) : 0;
                   const isComplete = record.step >= record.total_steps;
                   const isPathfinder = record._sessionType === "pathfinder";
 
@@ -354,11 +459,11 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                       onClick={() => isPathfinder && navigate(`/business/${record.id}`, { state: { record } })}
                     >
                       <TableCell>
-                        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                          isPathfinder
-                            ? "bg-blue-50 text-blue-700"
-                            : "bg-purple-50 text-purple-700"
-                        }`}>
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                            isPathfinder ? "bg-blue-50 text-blue-700" : "bg-purple-50 text-purple-700"
+                          }`}
+                        >
                           {isPathfinder ? "Pathfinder" : "KISS"}
                         </span>
                       </TableCell>
@@ -369,7 +474,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                       <TableCell>
                         {record.product ? (
                           <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/8 text-primary text-xs font-medium">
-                            {record.product}
+                            {standardizeProduct(record.product) ?? record.product}
                           </span>
                         ) : (
                           <span className="text-muted-foreground text-xs">—</span>
@@ -378,7 +483,11 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                       <TableCell>
                         {record.website_url && record.website_url !== "N/A" ? (
                           <a
-                            href={record.website_url.startsWith("http") ? record.website_url : `https://${record.website_url}`}
+                            href={
+                              record.website_url.startsWith("http")
+                                ? record.website_url
+                                : `https://${record.website_url}`
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary hover:underline flex items-center gap-1 text-xs"
@@ -405,23 +514,15 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                       <TableCell>
                         <div
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
-                            isComplete
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-amber-50 text-amber-700"
+                            isComplete ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
                           }`}
                         >
-                          {isComplete ? (
-                            <CheckCircle2 className="h-3 w-3" />
-                          ) : (
-                            <Clock className="h-3 w-3" />
-                          )}
+                          {isComplete ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
                           {isComplete ? "Complete" : "In Progress"}
                         </div>
                       </TableCell>
                       <TableCell>
-                        {isPathfinder ? (
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        ) : null}
+                        {isPathfinder ? <ChevronRight className="h-4 w-4 text-muted-foreground" /> : null}
                       </TableCell>
                     </TableRow>
                   );
@@ -470,7 +571,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                         {item}
                       </PaginationLink>
                     </PaginationItem>
-                  )
+                  ),
                 )}
               <PaginationItem>
                 <PaginationNext

@@ -10,14 +10,9 @@ import { Loader2, CalendarIcon, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts";
+import { useSessionData, DataEntry } from "@/contexts/SessionDataContext";
+
 const OVERVIEW_WEBHOOK_URL = "https://n8n.addpeople.net/webhook/pathfinder-overview";
-interface DataEntry {
-  timeCreated: string;
-  salesPerson: string;
-  salesEmail?: string;
-  product: string;
-  bound?: string;
-}
 interface OverviewResponse {
   pathfinder?: DataEntry[];
   kiss?: DataEntry[];
@@ -43,9 +38,8 @@ const PATHFINDER_OUTBOUND_TEAM = [
   "james.clarke@thrivemediagroup.co.uk",
 ];
 const OverviewTotal = () => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [pathfinderData, setPathfinderData] = useState<DataEntry[]>([]);
-  const [kissData, setKissData] = useState<DataEntry[]>([]);
+  const { overviewPathfinder: pathfinderData, setOverviewPathfinder: setPathfinderData, overviewKiss: kissData, setOverviewKiss: setKissData, overviewLoaded, setOverviewLoaded } = useSessionData();
+  const [isLoading, setIsLoading] = useState(!overviewLoaded);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [agentFilter, setAgentFilter] = useState<string>("all");
@@ -53,9 +47,11 @@ const OverviewTotal = () => {
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
 
-  // Fetch data on mount
+  // Fetch data on mount only if not cached
   useEffect(() => {
-    fetchOverviewData();
+    if (!overviewLoaded) {
+      fetchOverviewData();
+    }
   }, []);
   const fetchOverviewData = async () => {
     setIsLoading(true);
@@ -73,6 +69,7 @@ const OverviewTotal = () => {
       const kiss = data.find((item) => item.kiss)?.kiss || [];
       setPathfinderData(pathfinder);
       setKissData(kiss);
+      setOverviewLoaded(true);
 
       // Set default min/max dates
       const allDates = [...pathfinder, ...kiss].map((entry) => new Date(entry.timeCreated));

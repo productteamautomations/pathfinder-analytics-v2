@@ -35,7 +35,7 @@ const Index = () => {
       const response = await fetch(ALL_SESSIONS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({})
       });
 
       if (!response.ok) throw new Error("Failed to fetch sessions");
@@ -48,7 +48,7 @@ const Index = () => {
         const salespersonName = filtered[0]?.google_full_name || "Unknown";
         toast({
           title: `Sessions for ${salespersonName}`,
-          description: `Found ${filtered.length} session${filtered.length !== 1 ? "s" : ""}.`,
+          description: `Found ${filtered.length} session${filtered.length !== 1 ? "s" : ""}.`
         });
       } else {
         throw new Error("Unexpected response format");
@@ -58,7 +58,7 @@ const Index = () => {
       toast({
         title: "Failed to load sessions",
         description: "There was an error fetching the data. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
       setResults([]);
     } finally {
@@ -81,7 +81,7 @@ const Index = () => {
       const response = await fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query }),
+        body: JSON.stringify({ query })
       });
 
       if (!response.ok) throw new Error("Failed to fetch results");
@@ -95,13 +95,13 @@ const Index = () => {
         } else {
           toast({
             title: "Search complete",
-            description: `Found ${data.length} result${data.length !== 1 ? "s" : ""}.`,
+            description: `Found ${data.length} result${data.length !== 1 ? "s" : ""}.`
           });
         }
       } else if (data.message) {
         toast({
           title: "Search initiated",
-          description: "The search is processing. Please wait a moment and try again.",
+          description: "The search is processing. Please wait a moment and try again."
         });
         setResults([]);
       } else {
@@ -112,7 +112,7 @@ const Index = () => {
       toast({
         title: "Search failed",
         description: "There was an error processing your search. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
       setResults([]);
     } finally {
@@ -128,7 +128,7 @@ const Index = () => {
       const response = await fetch(ALL_SESSIONS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({})
       });
 
       if (!response.ok) throw new Error("Failed to fetch all sessions");
@@ -139,7 +139,7 @@ const Index = () => {
         setResults(data);
         toast({
           title: "All sessions loaded",
-          description: `Found ${data.length} session${data.length !== 1 ? "s" : ""}.`,
+          description: `Found ${data.length} session${data.length !== 1 ? "s" : ""}.`
         });
       } else {
         throw new Error("Unexpected response format");
@@ -149,7 +149,7 @@ const Index = () => {
       toast({
         title: "Failed to load sessions",
         description: "There was an error fetching all sessions. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
       setResults([]);
     } finally {
@@ -163,19 +163,19 @@ const Index = () => {
     <div className="min-h-[calc(100vh-3.5rem)]">
       <div className="container py-8 md:py-12">
         {/* Hero — only visible before first search */}
-        {showHero && (
-          <div className="text-center mb-10 animate-fade-in">
+        {showHero &&
+        <div className="text-center mb-10 animate-fade-in">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl gradient-primary mb-4">
               <Search className="h-5 w-5 text-white" />
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 tracking-tight">
-              Business Data Search
-            </h1>
-            <p className="text-muted-foreground max-w-md mx-auto">
-              Search by name, URL, email, or product to view detailed analytics and diagnostics.
-            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2 tracking-tight">Pathfinder Session Search
+
+          </h1>
+            <p className="text-muted-foreground max-w-md mx-auto">View detailed analytics and diagnostics.
+
+          </p>
           </div>
-        )}
+        }
 
         {/* Search */}
         <div className="mb-4">
@@ -189,42 +189,42 @@ const Index = () => {
             disabled={isLoadingAll}
             variant="ghost"
             size="sm"
-            className="text-muted-foreground hover:text-foreground"
-          >
-            {isLoadingAll ? (
-              <>
+            className="text-muted-foreground hover:text-foreground">
+
+            {isLoadingAll ?
+            <>
                 <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                 Loading all sessions…
-              </>
-            ) : (
-              "or load all sessions"
-            )}
+              </> :
+
+            "or load all sessions"
+            }
           </Button>
         </div>
 
         {/* Loading state */}
-        {(isLoading || isLoadingAll) && (
-          <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
+        {(isLoading || isLoadingAll) &&
+        <div className="flex flex-col items-center justify-center py-20 animate-fade-in">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
             <p className="text-sm text-muted-foreground">
               {isLoading ? "Searching…" : "Loading all sessions…"}
             </p>
           </div>
-        )}
+        }
 
         {/* Results */}
-        {hasSearched && !isLoading && !isLoadingAll && (
-          <div className="animate-fade-in">
+        {hasSearched && !isLoading && !isLoadingAll &&
+        <div className="animate-fade-in">
             <ResultsList
-              results={results}
-              initialSalesPersonFilter={salespersonFilter}
-              onClearSalespersonFilter={clearSalespersonFilter}
-            />
+            results={results}
+            initialSalesPersonFilter={salespersonFilter}
+            onClearSalespersonFilter={clearSalespersonFilter} />
+
           </div>
-        )}
+        }
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default Index;

@@ -474,7 +474,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                       <TableCell>
                         {record.product ? (
                           <span className="inline-flex px-2 py-0.5 rounded-full bg-primary/8 text-primary text-xs font-medium">
-                            {standardizeProduct(record.product) ?? record.product}
+                            {record.product}
                           </span>
                         ) : (
                           <span className="text-muted-foreground text-xs">—</span>

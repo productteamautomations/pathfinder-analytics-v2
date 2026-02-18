@@ -27,9 +27,9 @@ const SalesLeaderboard = () => {
   const [sessions, setSessions] = useState<BusinessRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSalesperson, setSelectedSalesperson] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+  const [dateRange, setDateRange] = useState<{from: Date | undefined;to: Date | undefined;}>({
     from: undefined,
-    to: undefined,
+    to: undefined
   });
 
   useEffect(() => {
@@ -42,7 +42,7 @@ const SalesLeaderboard = () => {
       const response = await fetch(ALL_SESSIONS_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
+        body: JSON.stringify({})
       });
       if (!response.ok) throw new Error("Failed to fetch sessions");
       const data = await response.json();
@@ -62,7 +62,7 @@ const SalesLeaderboard = () => {
 
   const salespeople = useMemo(() => {
     const map = new Map<string, string>();
-    sessions.forEach((s) => { if (s.google_id && s.google_full_name) map.set(s.google_id, s.google_full_name); });
+    sessions.forEach((s) => {if (s.google_id && s.google_full_name) map.set(s.google_id, s.google_full_name);});
     return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
   }, [sessions]);
 
@@ -95,7 +95,7 @@ const SalesLeaderboard = () => {
       stats.totalSessions++;
     });
     statsMap.forEach((stats) => {
-      const totalPercent = stats.sessions.reduce((acc, s) => acc + (s.step / s.total_steps) * 100, 0);
+      const totalPercent = stats.sessions.reduce((acc, s) => acc + s.step / s.total_steps * 100, 0);
       const totalSteps = stats.sessions.reduce((acc, s) => acc + s.step, 0);
       stats.averagePercentComplete = totalPercent / stats.totalSessions;
       stats.averageStep = totalSteps / stats.totalSessions;
@@ -131,8 +131,8 @@ const SalesLeaderboard = () => {
           <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
           <p className="text-sm text-muted-foreground">Loading leaderboard…</p>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -158,20 +158,20 @@ const SalesLeaderboard = () => {
         {/* Filters */}
         <div className="bg-white border border-border rounded-xl p-4 mb-6">
           <div className="flex flex-wrap gap-3 items-center">
-            <div className="flex items-center gap-2">
-              <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-              <Select value={selectedSalesperson} onValueChange={setSelectedSalesperson}>
-                <SelectTrigger className="w-44 h-8 text-xs">
-                  <SelectValue placeholder="All Salespeople" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Salespeople</SelectItem>
-                  {salespeople.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
 
             <Popover>
               <PopoverTrigger asChild>
@@ -192,8 +192,8 @@ const SalesLeaderboard = () => {
                   defaultMonth={dateRange.from}
                   selected={{ from: dateRange.from, to: dateRange.to }}
                   onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
-                  numberOfMonths={2}
-                />
+                  numberOfMonths={2} />
+
               </PopoverContent>
             </Popover>
           </div>
@@ -206,26 +206,26 @@ const SalesLeaderboard = () => {
             <p className="text-xs text-muted-foreground mt-0.5">Average progress through the sales tool (8 steps)</p>
           </div>
           <div className="p-5">
-            {leaderboardStats.length === 0 ? (
-              <div className="text-center py-12">
+            {leaderboardStats.length === 0 ?
+            <div className="text-center py-12">
                 <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="text-sm text-muted-foreground">No data available for the selected filters.</p>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                {leaderboardStats.map((stats, index) => (
-                  <div key={stats.google_id} className="space-y-1.5">
+              </div> :
+
+            <div className="space-y-5">
+                {leaderboardStats.map((stats, index) =>
+              <div key={stats.google_id} className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        {index < 3 ? (
-                          <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${getMedalStyle(index)}`}>
+                        {index < 3 ?
+                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${getMedalStyle(index)}`}>
+                            {index + 1}
+                          </span> :
+
+                    <span className="w-5 h-5 flex items-center justify-center text-xs text-muted-foreground font-medium">
                             {index + 1}
                           </span>
-                        ) : (
-                          <span className="w-5 h-5 flex items-center justify-center text-xs text-muted-foreground font-medium">
-                            {index + 1}
-                          </span>
-                        )}
+                    }
                         <span className="font-medium text-foreground text-sm">{stats.name}</span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -237,11 +237,11 @@ const SalesLeaderboard = () => {
                           <span>{stats.totalSessions} session{stats.totalSessions !== 1 ? "s" : ""}</span>
                         </div>
                         <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                          onClick={() => navigate(`/?salesperson=${stats.google_id}`)}
-                        >
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => navigate(`/?salesperson=${stats.google_id}`)}>
+
                           <Eye className="h-3 w-3 mr-1" />
                           View
                         </Button>
@@ -249,14 +249,14 @@ const SalesLeaderboard = () => {
                     </div>
                     <Progress value={stats.averagePercentComplete} className="h-1.5" />
                   </div>
-                ))}
+              )}
               </div>
-            )}
+            }
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>);
+
 };
 
 export default SalesLeaderboard;

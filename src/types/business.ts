@@ -68,7 +68,7 @@ export function normalizeKissRecord(kiss: KissRawRecord): BusinessRecord {
     google_full_name: kiss.data.salesPersonName || "Unknown",
     google_email: "",
     step: kiss.data.currentScreen || 0,
-    total_steps: 2,
+    total_steps: 8,
     client_name: kiss.data.prospectName || "Unknown",
     website_url: kiss.data.clientUrl || "",
     month_established: null,

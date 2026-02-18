@@ -316,15 +316,6 @@ const SalesLeaderboard = () => {
                           {" · "}
                           <span>{stats.completedSessions} complete</span>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                          onClick={() => navigate(`/?salesperson=${encodeURIComponent(stats.name)}`)}
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          View
-                        </Button>
                       </div>
                     </div>
                     <Progress value={stats.averagePercentComplete} className="h-1.5" />

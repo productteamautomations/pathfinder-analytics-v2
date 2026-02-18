@@ -182,10 +182,10 @@ const OverviewTotal = () => {
     });
   };
   const filteredPathfinder = useMemo(() => {
-    return result;
+    return filterPathfinderData(pathfinderData);
   }, [pathfinderData, startDate, endDate, agentFilter, boundFilter]);
   const filteredKiss = useMemo(() => {
-    return result;
+    return filterKissData(kissData);
   }, [kissData, startDate, endDate, agentFilter, boundFilter]);
 
   // Combined data

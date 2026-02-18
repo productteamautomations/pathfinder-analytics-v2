@@ -10,6 +10,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious, PaginationEllipsis } from "@/components/ui/pagination";
 
 interface ResultsListProps {
   results: BusinessRecord[];
@@ -19,6 +20,8 @@ interface ResultsListProps {
 
 type SortField = "google_full_name" | "client_name" | "product" | "timestamp" | "progress" | "status" | "sessionType";
 type SortDir = "asc" | "desc";
+
+const ITEMS_PER_PAGE = 50;
 
 const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilter }: ResultsListProps) => {
   const navigate = useNavigate();
@@ -31,23 +34,41 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [sortField, setSortField] = useState<SortField>("timestamp");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const filterOptions = useMemo(() => {
     const products = new Set<string>();
-    const salesPersons = new Map<string, string>();
     const contractLengths = new Set<string>();
+    
+    // Count sessions per salesperson name (like Overview page approach)
+    const salesPersonCounts: Record<string, { pathfinder: number; kiss: number }> = {};
 
     results.forEach((record) => {
       if (record.product) products.add(record.product);
-      if (record.google_id && record.google_full_name) {
-        salesPersons.set(record.google_id, record.google_full_name);
-      }
       if (record.contract_length) contractLengths.add(record.contract_length);
+      
+      const name = record.google_full_name;
+      if (name) {
+        if (!salesPersonCounts[name]) {
+          salesPersonCounts[name] = { pathfinder: 0, kiss: 0 };
+        }
+        if (record._sessionType === "kiss") {
+          salesPersonCounts[name].kiss++;
+        } else {
+          salesPersonCounts[name].pathfinder++;
+        }
+      }
     });
+
+    // Filter: include if they have any Pathfinder entries OR more than 5 KISS entries
+    const salesPersons = Object.entries(salesPersonCounts)
+      .filter(([_, counts]) => counts.pathfinder > 0 || counts.kiss > 5)
+      .map(([name]) => name)
+      .sort();
 
     return {
       products: Array.from(products).sort(),
-      salesPersons: Array.from(salesPersons.entries()).map(([id, name]) => ({ id, name })),
+      salesPersons,
       contractLengths: Array.from(contractLengths).sort(),
     };
   }, [results]);
@@ -64,7 +85,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
         if (!matchesSearch) return false;
       }
       if (productFilter !== "all" && record.product !== productFilter) return false;
-      if (salesPersonFilter !== "all" && record.google_id !== salesPersonFilter) return false;
+      if (salesPersonFilter !== "all" && record.google_full_name !== salesPersonFilter) return false;
       if (contractLengthFilter !== "all" && record.contract_length !== contractLengthFilter) return false;
       if (dateFrom) {
         const recordDate = new Date(record.timestamp);
@@ -114,6 +135,16 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
     return filtered;
   }, [results, searchQuery, productFilter, salesPersonFilter, contractLengthFilter, dateFrom, dateTo, sortField, sortDir]);
 
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(filteredAndSortedResults.length / ITEMS_PER_PAGE));
+  const paginatedResults = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredAndSortedResults.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredAndSortedResults, currentPage]);
+
+  // Reset page when filters change
+  const resetPage = () => setCurrentPage(1);
+
   const clearFilters = () => {
     setSearchQuery("");
     setProductFilter("all");
@@ -121,11 +152,13 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
     setContractLengthFilter("all");
     setDateFrom(undefined);
     setDateTo(undefined);
+    setCurrentPage(1);
     if (onClearSalespersonFilter) onClearSalespersonFilter();
   };
 
   const handleSalesPersonFilterChange = (value: string) => {
     setSalesPersonFilter(value);
+    setCurrentPage(1);
     if (value === "all" && onClearSalespersonFilter) onClearSalespersonFilter();
   };
 
@@ -180,7 +213,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
               type="text"
               placeholder="Filter results…"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="flex-1 h-9 bg-background"
             />
             {hasActiveFilters && (
@@ -195,7 +228,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
           <div className="flex flex-wrap gap-2 items-center">
             <Filter className="h-3.5 w-3.5 text-muted-foreground" />
 
-            <Select value={productFilter} onValueChange={setProductFilter}>
+            <Select value={productFilter} onValueChange={(v) => { setProductFilter(v); setCurrentPage(1); }}>
               <SelectTrigger className="h-8 text-xs w-[140px]">
                 <SelectValue placeholder="Product" />
               </SelectTrigger>
@@ -213,13 +246,13 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Sales</SelectItem>
-                {filterOptions.salesPersons.map(({ id, name }) => (
-                  <SelectItem key={id} value={id}>{name}</SelectItem>
+                {filterOptions.salesPersons.map((name) => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <Select value={contractLengthFilter} onValueChange={setContractLengthFilter}>
+            <Select value={contractLengthFilter} onValueChange={(v) => { setContractLengthFilter(v); setCurrentPage(1); }}>
               <SelectTrigger className="h-8 text-xs w-[140px]">
                 <SelectValue placeholder="Contract" />
               </SelectTrigger>
@@ -264,7 +297,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
 
       {/* Results Count */}
       <p className="text-xs text-muted-foreground mb-2 px-1">
-        {filteredAndSortedResults.length} of {results.length} results
+        Showing {((currentPage - 1) * ITEMS_PER_PAGE) + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredAndSortedResults.length)} of {filteredAndSortedResults.length} results
       </p>
 
       {/* Results Table */}
@@ -292,14 +325,14 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                 <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("progress")}>
                   <span className="flex items-center gap-1.5">Progress <SortIcon field="progress" /></span>
                 </TableHead>
-                <TableHead className="font-medium cursor-pointer select-none" onClick={() => toggleSort("status")}>
+                <TableHead className="font-medium cursor-pointer select-none min-w-[120px]" onClick={() => toggleSort("status")}>
                   <span className="flex items-center gap-1.5">Status <SortIcon field="status" /></span>
                 </TableHead>
                 <TableHead className="font-medium w-[80px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAndSortedResults.length === 0 ? (
+              {paginatedResults.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={9} className="text-center py-8">
                     <p className="text-muted-foreground text-sm">No results match your filters.</p>
@@ -309,7 +342,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAndSortedResults.map((record) => {
+                paginatedResults.map((record) => {
                   const progressPercent = record.total_steps > 0 ? Math.round((record.step / record.total_steps) * 100) : 0;
                   const isComplete = record.step >= record.total_steps;
                   const isPathfinder = record._sessionType === "pathfinder";
@@ -371,7 +404,7 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
                       </TableCell>
                       <TableCell>
                         <div
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap ${
                             isComplete
                               ? "bg-emerald-50 text-emerald-700"
                               : "bg-amber-50 text-amber-700"
@@ -398,6 +431,57 @@ const ResultsList = ({ results, initialSalesPersonFilter, onClearSalespersonFilt
           </Table>
         </div>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-4">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => {
+                  if (totalPages <= 7) return true;
+                  if (page === 1 || page === totalPages) return true;
+                  if (Math.abs(page - currentPage) <= 1) return true;
+                  return false;
+                })
+                .reduce<(number | "ellipsis")[]>((acc, page, idx, arr) => {
+                  if (idx > 0 && page - (arr[idx - 1] as number) > 1) acc.push("ellipsis");
+                  acc.push(page);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === "ellipsis" ? (
+                    <PaginationItem key={`ellipsis-${idx}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={item}>
+                      <PaginationLink
+                        isActive={currentPage === item}
+                        onClick={() => setCurrentPage(item as number)}
+                        className="cursor-pointer"
+                      >
+                        {item}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
     </div>
   );
 };

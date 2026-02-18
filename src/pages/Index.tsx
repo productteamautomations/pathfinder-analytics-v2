@@ -6,6 +6,7 @@ import ResultsList from "@/components/ResultsList";
 import { BusinessRecord, KissRawRecord, normalizeKissRecord } from "@/types/business";
 import { Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useSessionData } from "@/contexts/SessionDataContext";
 
 const WEBHOOK_URL = "https://n8n.addpeople.net/webhook/7e3c68fb-a6bf-43a8-a339-92374h234h23g";
 const ALL_SESSIONS_URL = "https://n8n.addpeople.net/webhook/7e3c68fb-a6bf-43a8-a339-oiu3294u23j";
@@ -13,7 +14,6 @@ const ALL_SESSIONS_URL = "https://n8n.addpeople.net/webhook/7e3c68fb-a6bf-43a8-a
 function parseCombinedResponse(data: unknown): BusinessRecord[] {
   if (!Array.isArray(data)) return [];
 
-  // New format: [{pathfinder: [...]}, {kiss: [...]}]
   const pathfinderObj = (data as any[]).find((item) => item.pathfinder);
   const kissObj = (data as any[]).find((item) => item.kiss);
 
@@ -27,18 +27,15 @@ function parseCombinedResponse(data: unknown): BusinessRecord[] {
     return [...pathfinderRecords, ...kissRecords];
   }
 
-  // Legacy flat array format
   return (data as any[]).map((r: any) => ({ ...r, _sessionType: "pathfinder" as const }));
 }
 
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [results, setResults] = useState<BusinessRecord[]>([]);
+  const { results, setResults, hasSearched, setHasSearched, salespersonFilter, setSalespersonFilter } = useSessionData();
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingAll, setIsLoadingAll] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [salespersonFilter, setSalespersonFilter] = useState<string | null>(null);
 
   useEffect(() => {
     const salespersonId = searchParams.get("salesperson");
